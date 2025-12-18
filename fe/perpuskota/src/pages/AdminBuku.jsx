@@ -1,10 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  getBuku,
-  tambahBuku,
-  updateBuku,
-  hapusBuku,
-} from "../services/bukuService";
+import {getBuku, tambahBuku, updateBuku, hapusBuku,} from "../services/bukuService";
 
 export default function AdminBuku() {
   const [buku, setBuku] = useState([]);
@@ -62,12 +57,10 @@ export default function AdminBuku() {
   return (
     <div className="min-h-screen bg-gray-100 py-10 px-4">
       <div className="max-w-6xl mx-auto space-y-10">
-        {/* HEADER */}
         <h1 className="text-3xl font-bold text-yellow-600">
           Admin – Manajemen Buku
         </h1>
 
-        {/* FORM */}
         <div className="bg-white rounded-2xl shadow p-6">
           <h2 className="text-xl font-semibold mb-4">
             {editMode ? "Edit Buku" : "Tambah Buku"}
@@ -129,7 +122,6 @@ export default function AdminBuku() {
           </form>
         </div>
 
-        {/* TABEL */}
         <div className="bg-white rounded-2xl shadow overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-yellow-500 text-white">

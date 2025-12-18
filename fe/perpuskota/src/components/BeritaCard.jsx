@@ -1,10 +1,7 @@
 export default function BeritaCard({ judul, tanggal, ringkas, gambar }) {
   return (
     <div className="bg-white border rounded-xl overflow-hidden hover:shadow-lg hover:scale-[1.02] transition cursor-pointer h-full">
-      {/* FOTO */}
-      <img src={gambar} alt={judul} className="w-full h-40 object-cover" />
-
-      {/* KONTEN */}
+    <img src={gambar} alt={judul} className="w-full h-40 object-cover" />
       <div className="p-6">
         <p className="text-xs text-gray-500 mb-1">{tanggal}</p>
         <h3 className="font-semibold mb-2">{judul}</h3>

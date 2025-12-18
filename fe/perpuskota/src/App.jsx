@@ -6,7 +6,7 @@ import Koleksi from "./pages/Koleksi";
 import Profil from "./pages/Profil";
 import DetailBuku from "./pages/DetailBuku";
 import Akun from "./pages/Akun";
-import AdminBuku from "./pages/AdminBuku"; // ✅ TAMBAH INI
+import AdminBuku from "./pages/AdminBuku"; 
 
 export default function App() {
   return (
@@ -20,13 +20,8 @@ export default function App() {
             <Route path="/koleksi" element={<Koleksi />} />
             <Route path="/profil" element={<Profil />} />
 
-            {/* DETAIL BUKU */}
             <Route path="/buku/:id" element={<DetailBuku />} />
-
-            {/* AKUN */}
             <Route path="/akun" element={<Akun />} />
-
-            {/* ADMIN CRUD BUKU */}
             <Route path="/admin/buku" element={<AdminBuku />} />
           </Routes>
         </div>

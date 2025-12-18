@@ -9,7 +9,6 @@ export default function Navigasi() {
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-        {/* LOGO */}
         <div className="flex items-center gap-2 font-bold text-yellow-600">
         <img
             src="/images/Lambang.png"
@@ -19,7 +18,6 @@ export default function Navigasi() {
           <span>PerpusKota</span>
         </div>
 
-        {/* NAVBAR */}
         <nav className="flex gap-6 text-sm">
           <NavLink to="/" end className={menuClass}>
             Beranda

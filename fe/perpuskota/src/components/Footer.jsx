@@ -2,7 +2,6 @@ export default function Footer() {
   return (
     <footer className="bg-yellow-500">
       <div className="max-w-7xl mx-auto px-40 py-8 flex flex-col md:flex-row justify-between items-start gap-12 text-sm">
-        {/* JAM OPERASIONAL */}
         <div className="md:text-left">
           <h3 className="font-bold text-black mb-2">Jam Operasional</h3>
 
@@ -23,7 +22,6 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* KONTAK */}
         <div className="md:text-left">
           <h3 className="font-bold text-black mb-2">Kontak</h3>
           <p className="text-white">
