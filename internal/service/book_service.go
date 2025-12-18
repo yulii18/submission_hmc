@@ -1,71 +1,29 @@
-package repository
+package service
 
 import (
 	"context"
-	"database/sql"
 
 	"submission_hmc/internal/domain"
+	"submission_hmc/internal/repository"
 )
 
-type BookRepository interface {
-	FindAll(ctx context.Context) ([]domain.Book, error)
-	Create(ctx context.Context, book *domain.Book) error
+type BookService interface {
+	GetAllBooks(ctx context.Context) ([]domain.Book, error)
+	CreateBook(ctx context.Context, book *domain.Book) error
 }
 
-type bookRepository struct {
-	db *sql.DB
+type bookService struct {
+	bookRepo repository.BookRepository
 }
 
-func NewBookRepository(db *sql.DB) BookRepository {
-	return &bookRepository{db: db}
+func NewBookService(bookRepo repository.BookRepository) BookService {
+	return &bookService{bookRepo: bookRepo}
 }
 
-func (r *bookRepository) FindAll(ctx context.Context) ([]domain.Book, error) {
-	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, title, author, category, stock, created_at FROM books
-	`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var books []domain.Book
-	for rows.Next() {
-		var b domain.Book
-		if err := rows.Scan(
-			&b.ID,
-			&b.Title,
-			&b.Author,
-			&b.Category,
-			&b.Stock,
-			&b.CreatedAt,
-		); err != nil {
-			return nil, err
-		}
-		books = append(books, b)
-	}
-
-	return books, nil
+func (s *bookService) GetAllBooks(ctx context.Context) ([]domain.Book, error) {
+	return s.bookRepo.FindAll(ctx)
 }
 
-func (r *bookRepository) Create(ctx context.Context, book *domain.Book) error {
-	query := `
-		INSERT INTO books (title, author, category, stock)
-		VALUES (?, ?, ?, ?)
-	`
-	result, err := r.db.ExecContext(
-		ctx,
-		query,
-		book.Title,
-		book.Author,
-		book.Category,
-		book.Stock,
-	)
-	if err != nil {
-		return err
-	}
-
-	id, _ := result.LastInsertId()
-	book.ID = id
-	return nil
+func (s *bookService) CreateBook(ctx context.Context, book *domain.Book) error {
+	return s.bookRepo.Create(ctx, book)
 }

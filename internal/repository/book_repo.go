@@ -22,22 +22,23 @@ func NewBookRepository(db *sql.DB) BookRepository {
 
 func (r *bookRepository) FindAll(ctx context.Context) ([]domain.Book, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, title, author, category, stock, created_at FROM books
+		SELECT id, judul, penulis, penerbit, tahun, stok, created_at FROM books
 	`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var books []domain.Book
+	books := make([]domain.Book, 0)
 	for rows.Next() {
 		var b domain.Book
 		if err := rows.Scan(
 			&b.ID,
-			&b.Title,
-			&b.Author,
-			&b.Category,
-			&b.Stock,
+			&b.Judul,
+			&b.Penulis,
+			&b.Penerbit,
+			&b.Tahun,
+			&b.Stok,
 			&b.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -50,16 +51,17 @@ func (r *bookRepository) FindAll(ctx context.Context) ([]domain.Book, error) {
 
 func (r *bookRepository) Create(ctx context.Context, book *domain.Book) error {
 	query := `
-		INSERT INTO books (title, author, category, stock)
-		VALUES (?, ?, ?, ?)
+		INSERT INTO books (judul, penulis, penerbit, tahun, stok)
+		VALUES (?, ?, ?, ?, ?)
 	`
 	result, err := r.db.ExecContext(
 		ctx,
 		query,
-		book.Title,
-		book.Author,
-		book.Category,
-		book.Stock,
+		book.Judul,
+		book.Penulis,
+		book.Penerbit,
+		book.Tahun,
+		book.Stok,
 	)
 	if err != nil {
 		return err

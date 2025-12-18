@@ -5,14 +5,14 @@ import (
 	"net/http"
 
 	"submission_hmc/internal/domain"
-	"submission_hmc/internal/service"
+	bookservice "submission_hmc/internal/service"
 )
 
 type BookHandler struct {
-	bookService service.BookService
+	bookService bookservice.BookService
 }
 
-func NewBookHandler(bookService service.BookService) *BookHandler {
+func NewBookHandler(bookService bookservice.BookService) *BookHandler {
 	return &BookHandler{bookService: bookService}
 }
 
@@ -30,7 +30,7 @@ func (h *BookHandler) GetBooks(w http.ResponseWriter, r *http.Request) {
 func (h *BookHandler) CreateBook(w http.ResponseWriter, r *http.Request) {
 	var book domain.Book
 	if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 

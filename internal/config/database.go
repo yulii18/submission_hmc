@@ -8,34 +8,26 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-var DB *sql.DB
+func ConnectDB() (*sql.DB, error) {
+	user := "root"
+	password := ""
+	host := "127.0.0.1"
+	port := "3306"
+	dbname := "perpustakaan"
 
-func ConnectDB() {
-	// sesuaikan dengan database kamu
-	dbUser := "root"
-	dbPass := ""
-	dbHost := "localhost"
-	dbPort := "3306"
-	dbName := "perpustakaan"
-
-	dsn := fmt.Sprintf(
-		"%s:%s@tcp(%s:%s)/%s?parseTime=true",
-		dbUser,
-		dbPass,
-		dbHost,
-		dbPort,
-		dbName,
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",
+		user, password, host, port, dbname,
 	)
 
-	var err error
-	DB, err = sql.Open("mysql", dsn)
+	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		log.Fatal("Gagal membuka koneksi DB:", err)
+		return nil, err
 	}
 
-	if err = DB.Ping(); err != nil {
-		log.Fatal("Gagal konek ke DB:", err)
+	if err := db.Ping(); err != nil {
+		return nil, err
 	}
 
-	log.Println("✅ Berhasil terhubung ke MySQL")
+	log.Println("Database terkoneksi")
+	return db, nil
 }

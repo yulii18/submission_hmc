@@ -16,28 +16,28 @@ import (
 
 func main() {
 	// koneksi database
-	config.ConnectDB()
+	db, err := config.ConnectDB()
+	if err != nil {
+		log.Fatal("Gagal konek ke DB:", err)
+	}
+	defer db.Close()
 
-	// init router
+	//layer
+	bookRepo := repository.NewBookRepository(db)
+	bookService := service.NewBookService(bookRepo)
+	bookHandler := handler.NewBookHandler(bookService)	
+
+	// router
 	r := chi.NewRouter()
-
-	// middleware dasar
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	// dependency injection
-	bookRepo := repository.NewBookRepository(config.DB)
-	bookService := service.NewBookService(bookRepo)
-	bookHandler := handler.NewBookHandler(bookService)
+	// register routes
+	routes.RegisterBookRoutes(r, bookHandler)
 
-	// routes
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Server Perpustakaan API is running 🚀"))
-	})
-
-	routes.BookRoutes(r, bookHandler)
-
-	// start server
-	log.Println("Server berjalan di http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Println("Server jalan di http://localhost:8080")
+	err = http.ListenAndServe(":8080", r)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
