@@ -10,6 +10,9 @@ import (
 type BookRepository interface {
 	FindAll(ctx context.Context) ([]domain.Book, error)
 	Create(ctx context.Context, book *domain.Book) error
+	FindByID(ctx context.Context, id int64) (*domain.Book, error)
+	Update(ctx context.Context, book *domain.Book) error
+	Delete(ctx context.Context, id int64) error
 }
 
 type bookRepository struct {
@@ -70,4 +73,50 @@ func (r *bookRepository) Create(ctx context.Context, book *domain.Book) error {
 	id, _ := result.LastInsertId()
 	book.ID = id
 	return nil
+}
+
+func (r *bookRepository) FindByID(ctx context.Context, id int64) (*domain.Book, error) {
+	row := r.db.QueryRowContext(ctx, `
+		SELECT id, judul, penulis, penerbit, tahun, stok, created_at
+		FROM books WHERE id = ?
+	`, id)
+
+	var b domain.Book
+	err := row.Scan(
+		&b.ID,
+		&b.Judul,
+		&b.Penulis,
+		&b.Penerbit,
+		&b.Tahun,
+		&b.Stok,
+		&b.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &b, nil
+}
+
+func (r *bookRepository) Update(ctx context.Context, book *domain.Book) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE books
+		SET judul=?, penulis=?, penerbit=?, tahun=?, stok=?
+		WHERE id=?
+	`,
+		book.Judul,
+		book.Penulis,
+		book.Penerbit,
+		book.Tahun,
+		book.Stok,
+		book.ID,
+	)
+	return err
+}
+
+func (r *bookRepository) Delete(ctx context.Context, id int64) error {
+	_, err := r.db.ExecContext(ctx, `
+		DELETE FROM books WHERE id=?
+	`, id)
+	return err
 }
