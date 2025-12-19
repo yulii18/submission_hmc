@@ -2,4 +2,8 @@ package middleware
 
 type contextKey string
 
-const ClaimsKey contextKey = "claims"
+const (
+    UserIDKey contextKey = "userID"
+    EmailKey  contextKey = "email"
+	RoleKey   contextKey = "role"
+)

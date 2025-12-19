@@ -5,11 +5,13 @@ import (
 	"submission_hmc/internal/domain"
 )
 
+// Interface UserRepository
 type UserRepository interface {
-	Create(user *domain.User) error
-	FindByEmail(email string) (*domain.User, error)
+	Create(user domain.User) (int64, error)
+	GetByEmail(email string) (*domain.User, error)
 }
 
+// Implementasi UserRepository
 type userRepository struct {
 	db *sql.DB
 }
@@ -18,34 +20,21 @@ func NewUserRepository(db *sql.DB) UserRepository {
 	return &userRepository{db: db}
 }
 
-func (r *userRepository) Create(user *domain.User) error {
-	query := `
-		INSERT INTO users (name, email, password, created_at, updated_at)
-		VALUES (?, ?, ?, NOW(), NOW())
-	`
-	_, err := r.db.Exec(query, user.Name, user.Email, user.Password)
-	return err
+func (r *userRepository) Create(user domain.User) (int64, error) {
+	query := `INSERT INTO user (name,email,password,role) VALUES (?,?,?,?)`
+	result, err := r.db.Exec(query, user.Name, user.Email, user.Password, user.Role)
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
 }
 
-func (r *userRepository) FindByEmail(email string) (*domain.User, error) {
-	query := `
-		SELECT id, name, email, password, created_at, updated_at
-		FROM users WHERE email = ?
-	`
-	row := r.db.QueryRow(query, email)
-
-	var user domain.User
-	err := row.Scan(
-		&user.ID,
-		&user.Name,
-		&user.Email,
-		&user.Password,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
+func (r *userRepository) GetByEmail(email string) (*domain.User, error) {
+	row := r.db.QueryRow(`SELECT id,name,email,password,role FROM user WHERE email=?`, email)
+	var u domain.User
+	err := row.Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.Role)
 	if err != nil {
 		return nil, err
 	}
-
-	return &user, nil
+	return &u, nil
 }
