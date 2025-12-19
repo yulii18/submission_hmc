@@ -31,3 +31,4 @@ func ConnectDB() (*sql.DB, error) {
 	log.Println("Database terkoneksi")
 	return db, nil
 }
+ 

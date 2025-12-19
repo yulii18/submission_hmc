@@ -54,7 +54,6 @@ func (h *BookHandler) GetBookByID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Data tidak ditemukan", http.StatusNotFound)
 		return
 	}
-
 	json.NewEncoder(w).Encode(book)
 }
 

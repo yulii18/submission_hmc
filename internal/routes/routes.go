@@ -25,4 +25,4 @@ func RegisterBookRoutes(r chi.Router, h *handler.BookHandler) {
 		r.With(mw.AdminOnly).Post("/", h.CreateBook)
 		r.With(mw.AdminOnly).Delete("/{id}", h.DeleteBook)
 	})
-}
+}  

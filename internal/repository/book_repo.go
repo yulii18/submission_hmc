@@ -25,7 +25,7 @@ func NewBookRepository(db *sql.DB) BookRepository {
 
 func (r *bookRepository) FindAll(ctx context.Context) ([]domain.Book, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, judul, penulis, penerbit, tahun, stok, created_at FROM books
+		SELECT id, judul, sinopsis, penulis, penerbit, tahun, stok, created_at FROM books
 	`)
 	if err != nil {
 		return nil, err
@@ -38,6 +38,7 @@ func (r *bookRepository) FindAll(ctx context.Context) ([]domain.Book, error) {
 		if err := rows.Scan(
 			&b.ID,
 			&b.Judul,
+			&b.Sinopsis,
 			&b.Penulis,
 			&b.Penerbit,
 			&b.Tahun,
@@ -54,13 +55,14 @@ func (r *bookRepository) FindAll(ctx context.Context) ([]domain.Book, error) {
 
 func (r *bookRepository) Create(ctx context.Context, book *domain.Book) error {
 	query := `
-		INSERT INTO books (judul, penulis, penerbit, tahun, stok)
-		VALUES (?, ?, ?, ?, ?)
+		INSERT INTO books (judul, sinopsis, penulis, penerbit, tahun, stok)
+		VALUES (?, ?, ?, ?, ?, ?)
 	`
 	result, err := r.db.ExecContext(
 		ctx,
 		query,
 		book.Judul,
+		book.Sinopsis,
 		book.Penulis,
 		book.Penerbit,
 		book.Tahun,
@@ -77,7 +79,7 @@ func (r *bookRepository) Create(ctx context.Context, book *domain.Book) error {
 
 func (r *bookRepository) FindByID(ctx context.Context, id int64) (*domain.Book, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, judul, penulis, penerbit, tahun, stok, created_at
+		SELECT id, judul, sinopsis, penulis, penerbit, tahun, stok, created_at
 		FROM books WHERE id = ?
 	`, id)
 
@@ -85,6 +87,7 @@ func (r *bookRepository) FindByID(ctx context.Context, id int64) (*domain.Book, 
 	err := row.Scan(
 		&b.ID,
 		&b.Judul,
+		&b.Sinopsis,
 		&b.Penulis,
 		&b.Penerbit,
 		&b.Tahun,
@@ -101,10 +104,11 @@ func (r *bookRepository) FindByID(ctx context.Context, id int64) (*domain.Book, 
 func (r *bookRepository) Update(ctx context.Context, book *domain.Book) error {
 	_, err := r.db.ExecContext(ctx, `
 		UPDATE books
-		SET judul=?, penulis=?, penerbit=?, tahun=?, stok=?
+		SET judul=?, sinopsis=?, penulis=?, penerbit=?, tahun=?, stok=?
 		WHERE id=?
 	`,
 		book.Judul,
+		book.Sinopsis,	
 		book.Penulis,
 		book.Penerbit,
 		book.Tahun,
