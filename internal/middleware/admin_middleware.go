@@ -6,13 +6,11 @@ import (
 
 func AdminOnly(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		role := r.Header.Get("X-ROLE")
-
-		if role != "admin" {
-			http.Error(w, "Forbidden: admin only", http.StatusForbidden)
+		role, ok := r.Context().Value(RoleKey).(string)
+		if !ok || role != "admin" {
+			http.Error(w, "forbidden: admin only", http.StatusForbidden)
 			return
 		}
-
 		next.ServeHTTP(w, r)
 	})
 }

@@ -2,12 +2,14 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
-	"github.com/go-chi/chi/v5"
 	"submission_hmc/internal/domain"
 	bookservice "submission_hmc/internal/service"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type BookHandler struct {
@@ -38,6 +40,7 @@ func (h *BookHandler) CreateBook(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.bookService.CreateBook(r.Context(), &book); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fmt.Println(err)
 		return
 	}
 

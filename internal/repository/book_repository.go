@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"submission_hmc/internal/domain"
 )
@@ -54,6 +55,7 @@ func (r *bookRepository) FindAll(ctx context.Context) ([]domain.Book, error) {
 }
 
 func (r *bookRepository) Create(ctx context.Context, book *domain.Book) error {
+	fmt.Println("Rasya Ganteng")
 	query := `
 		INSERT INTO books (judul, sinopsis, penulis, penerbit, tahun, stok)
 		VALUES (?, ?, ?, ?, ?, ?)
@@ -68,6 +70,7 @@ func (r *bookRepository) Create(ctx context.Context, book *domain.Book) error {
 		book.Tahun,
 		book.Stok,
 	)
+	fmt.Println(result)
 	if err != nil {
 		return err
 	}
