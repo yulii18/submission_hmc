@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"submission_hmc/internal/domain"
 	"submission_hmc/internal/repository"
+	"submission_hmc/internal/middleware"
 )
 
 type BookService interface {
@@ -13,6 +15,8 @@ type BookService interface {
 	GetBookByID(ctx context.Context, id int64) (*domain.Book, error)
 	UpdateBook(ctx context.Context, book *domain.Book) error
 	DeleteBook(ctx context.Context, id int64) error
+	BorrowBook(ctx context.Context, id int64) (*domain.Book, error)
+	GetBooksByCategory(ctx context.Context, categoryID int) ([]domain.Book, error)
 }
 
 type bookService struct {
@@ -35,10 +39,40 @@ func (s *bookService) GetBookByID(ctx context.Context, id int64) (*domain.Book, 
 	return s.bookRepo.FindByID(ctx, id)
 }
 
+func (s *bookService) GetBooksByCategory(ctx context.Context, categoryID int) ([]domain.Book, error) {
+    return s.bookRepo.FindByCategoryID(ctx, categoryID)
+}
+
 func (s *bookService) UpdateBook(ctx context.Context, book *domain.Book) error {
 	return s.bookRepo.Update(ctx, book)
 }
 
 func (s *bookService) DeleteBook(ctx context.Context, id int64) error {
 	return s.bookRepo.Delete(ctx, id)
+}
+
+func (s *bookService) BorrowBook(ctx context.Context, id int64) (*domain.Book, error) {
+    userIDCtx := ctx.Value(middleware.UserIDKey)
+    if userIDCtx == nil {
+        return nil, fmt.Errorf("user not logged in")
+    }
+
+    userID, ok := userIDCtx.(int64)
+    if !ok {
+        return nil, fmt.Errorf("invalid userID in context")
+    }
+
+    // ambil buku
+    book, err := s.bookRepo.FindByID(ctx, id)
+    if err != nil {
+        return nil, fmt.Errorf("buku tidak ditemukan")
+    }
+
+    // update buku / stok / log peminjaman sesuai kebutuhan
+    if err := s.bookRepo.Update(ctx, book); err != nil {
+        return nil, fmt.Errorf("gagal meminjam buku: %v", err)
+    }
+	 fmt.Printf("User %d meminjam buku %d (%s)\n", userID, book.ID, book.Judul)
+
+    return book, nil
 }

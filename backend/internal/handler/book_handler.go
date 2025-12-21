@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"submission_hmc/internal/domain"
 	bookservice "submission_hmc/internal/service"
@@ -54,7 +55,7 @@ func (h *BookHandler) GetBookByID(w http.ResponseWriter, r *http.Request) {
 
 	book, err := h.bookService.GetBookByID(r.Context(), id)
 	if err != nil {
-		http.Error(w, "Data tidak ditemukan", http.StatusNotFound)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 	json.NewEncoder(w).Encode(book)
@@ -80,6 +81,37 @@ func (h *BookHandler) UpdateBook(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(book)
 }
 
+func (h *BookHandler) BorrowBook(w http.ResponseWriter, r *http.Request) {
+    idStr := strings.TrimPrefix(r.URL.Path, "/books/borrow/")
+    id, err := strconv.ParseInt(idStr, 10, 64)
+    if err != nil {
+        http.Error(w, "ID buku tidak valid", http.StatusBadRequest)
+        return
+    }
+
+    // Ambil userID dari context JWT
+    userIDCtx := r.Context().Value("userID")
+    if userIDCtx == nil {
+        http.Error(w, "User belum login", http.StatusUnauthorized)
+        return
+    }
+    userID := userIDCtx.(int64)
+
+    // Panggil service untuk meminjam buku
+    book, err := h.bookService.BorrowBook(r.Context(), id)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(map[string]interface{}{
+        "message": "Buku berhasil dipinjam",
+        "userID":  userID,
+        "book":    book,
+    })
+}
+
 func (h *BookHandler) DeleteBook(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, _ := strconv.ParseInt(idStr, 10, 64)
@@ -90,4 +122,22 @@ func (h *BookHandler) DeleteBook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *BookHandler) GetBooksByCategory(w http.ResponseWriter, r *http.Request) {
+    categoryIDStr := chi.URLParam(r, "category_id")
+    categoryID, err := strconv.Atoi(categoryIDStr)
+    if err != nil {
+        http.Error(w, "invalid category id", http.StatusBadRequest)
+        return
+    }
+
+    books, err := h.bookService.GetBooksByCategory(r.Context(), categoryID)
+    if err != nil {
+        http.Error(w, "failed to get books", http.StatusInternalServerError)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(books)
 }

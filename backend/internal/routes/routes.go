@@ -15,36 +15,73 @@ func RegisterRoutes(
 	authHandler *handler.AuthHandler,
 	bookHandler *handler.BookHandler,
 	adminHandler *handler.AdminHandler,
+	userHandler *handler.UserHandler,
+	borrowHandler *handler.BorrowHandler,
 	jwtKey []byte,
 ) {
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173"},
+		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Content-Type", "Authorization"},
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
 
+	// ========== AUTH ==========
 	r.Post("/register", authHandler.Register)
 	r.Post("/login", authHandler.Login)
+
+	// ========== USER PROFILE ==========
+	r.With(middleware.JWTMiddleware(jwtKey)).Get("/profile", userHandler.GetProfile)
+
+	// ========== HEALTH CHECK ==========
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Server OK"))
 	})
 
+	// ========== ADMIN DASHBOARD ==========
 	r.Route("/admin", func(r chi.Router) {
 		r.Use(middleware.JWTMiddleware(jwtKey))
 		r.Use(middleware.AdminOnly)
 		r.Get("/dashboard", adminHandler.Dashboard)
 	})
 
-	r.Route("/books", func(r chi.Router) {
+	// ========== ADMIN – USER MANAGEMENT ==========
+	r.Route("/admin/users", func(r chi.Router) {
 		r.Use(middleware.JWTMiddleware(jwtKey))
+		r.Use(middleware.AdminOnly)
+
+		r.Get("/", userHandler.GetUsers)
+		r.Get("/{id}", userHandler.GetUserByID)
+		r.Get("/email/{email}", userHandler.GetUserByEmail)
+		r.Put("/{id}", userHandler.UpdateUser)
+		r.Delete("/{id}", userHandler.DeleteUser)
+	})
+
+	// ========== BOOK ROUTES ==========
+	r.Route("/books", func(r chi.Router) {
+
+		// ---- Public ----
+		r.Get("/category/{category_id}", bookHandler.GetBooksByCategory)
 
 		r.Get("/", bookHandler.GetBooks)
 		r.Get("/{id}", bookHandler.GetBookByID)
 
-		r.With(middleware.AdminOnly).Post("/", bookHandler.CreateBook)
-		r.With(middleware.AdminOnly).Put("/{id}", bookHandler.UpdateBook)
-		r.With(middleware.AdminOnly).Delete("/{id}", bookHandler.DeleteBook)
+		// ---- Borrowing (User Login Required) ----
+		r.With(middleware.JWTMiddleware(jwtKey)).
+			Post("/borrow/{id}", borrowHandler.Borrow)
+
+		r.With(middleware.JWTMiddleware(jwtKey)).
+			Get("/borrowings", borrowHandler.GetMyBorrowings)
+
+		// ---- Admin Only ----
+		r.With(middleware.JWTMiddleware(jwtKey), middleware.AdminOnly).
+			Post("/", bookHandler.CreateBook)
+
+		r.With(middleware.JWTMiddleware(jwtKey), middleware.AdminOnly).
+			Put("/{id}", bookHandler.UpdateBook)
+
+		r.With(middleware.JWTMiddleware(jwtKey), middleware.AdminOnly).
+			Delete("/{id}", bookHandler.DeleteBook)
 	})
 }

@@ -1,1 +1,10 @@
 .env
+# Go binary
+backend/cmd/perpustakaan
+backend/cmd/*.exe
+
+# Env
+frontend/.env
+
+# temp
+backend/tmp/

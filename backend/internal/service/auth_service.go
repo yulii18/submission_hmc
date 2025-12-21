@@ -2,11 +2,10 @@ package service
 
 import (
 	"errors"
-	"fmt"
-	"log"
+	"time"
+
 	"submission_hmc/internal/domain"
 	"submission_hmc/internal/repository"
-	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
@@ -18,49 +17,53 @@ type AuthService struct {
 }
 
 func NewAuthService(repo repository.UserRepository, jwtKey []byte) *AuthService {
-	return &AuthService{repo: repo, jwtKey: jwtKey}
+	return &AuthService{
+		repo:   repo,
+		jwtKey: jwtKey,
+	}
 }
 
+// ================= REGISTER =================
 func (a *AuthService) Register(user domain.User) (int64, error) {
 	existing, _ := a.repo.GetByEmail(user.Email)
 	if existing != nil {
 		return 0, errors.New("email already registered")
 	}
 
-	hashedPw, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-		if err != nil {
-		log.Fatal(err)
+	hashedPw, err := bcrypt.GenerateFromPassword(
+		[]byte(user.Password),
+		bcrypt.DefaultCost,
+	)
+	if err != nil {
+		return 0, err
 	}
 
 	user.Password = string(hashedPw)
-
-	user.Role = "member"
-
-	fmt.Println(user)
+	user.Role = "member" // default role
 
 	return a.repo.Create(user)
 }
 
+// ================= LOGIN =================
 func (a *AuthService) Login(email, password string) (string, error) {
 	user, _ := a.repo.GetByEmail(email)
 	if user == nil {
 		return "", errors.New("user not found")
 	}
 
-	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	if err != nil{
-		return "", errors.New("Email atau password tidak ganteng")
+	err := bcrypt.CompareHashAndPassword(
+		[]byte(user.Password),
+		[]byte(password),
+	)
+	if err != nil {
+		return "", errors.New("email atau password salah")
 	}
 
-	// if user.Password != bcrypt.password {
-	// 	return "", errors.New("invalid credentials")
-	// }
-
 	claims := jwt.MapClaims{
-		"userID": user.ID,
-		"email":  user.Email,
-		"role":   user.Role,
-		"exp":    time.Now().Add(2 * time.Hour).Unix(),
+		"userID": float64(user.ID), 
+		"email": user.Email,
+		"role":  user.Role,
+		"exp":   time.Now().Add(2 * time.Hour).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
