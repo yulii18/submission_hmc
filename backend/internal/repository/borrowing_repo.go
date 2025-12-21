@@ -28,7 +28,6 @@ func (r *borrowingRepo) Create(userID, bookID int) (*models.Borrowing, error) {
     }
     defer tx.Rollback()
 
-    // 1. Kurangi stok buku (pastikan stok > 0)
     res, err := tx.Exec(`
         UPDATE books
         SET stok = stok - 1
@@ -46,7 +45,6 @@ func (r *borrowingRepo) Create(userID, bookID int) (*models.Borrowing, error) {
         return nil, errors.New("stok buku habis")
     }
 
-    // 2. Insert ke tabel borrowings
     res, err = tx.Exec(`
         INSERT INTO borrowings (user_id, book_id, tanggal_pinjam, status)
         VALUES (?, ?, CURDATE(), 'dipinjam')
@@ -60,7 +58,6 @@ func (r *borrowingRepo) Create(userID, bookID int) (*models.Borrowing, error) {
         return nil, err
     }
 
-    // 3. Ambil data borrowing yang baru
     row := tx.QueryRow(`
         SELECT id, user_id, book_id, tanggal_pinjam, tanggal_kembali, status
         FROM borrowings
@@ -80,7 +77,6 @@ func (r *borrowingRepo) Create(userID, bookID int) (*models.Borrowing, error) {
         return nil, err
     }
 
-    // 4. Commit
     if err := tx.Commit(); err != nil {
         return nil, err
     }

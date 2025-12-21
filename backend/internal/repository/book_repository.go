@@ -75,13 +75,11 @@ func (r *bookRepository) FindAll(ctx context.Context) ([]domain.Book, error) {
 
 
 func (r *bookRepository) Create(ctx context.Context, book *domain.Book) error {
-	// Mulai transaction
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 
-	// 1️⃣ Insert book
 	queryInsertBook := `
 		INSERT INTO books (judul, sinopsis, penulis, penerbit, tahun, stok)
 		VALUES (?, ?, ?, ?, ?, ?)
@@ -108,7 +106,6 @@ func (r *bookRepository) Create(ctx context.Context, book *domain.Book) error {
 	}
 	book.ID = bookID
 
-	// 2️⃣ Ambil kategori
 	queryGetCategory := `SELECT id, nama_kategori FROM categories WHERE nama_kategori = ? LIMIT 1`
 
 	var category struct {
@@ -127,7 +124,6 @@ func (r *bookRepository) Create(ctx context.Context, book *domain.Book) error {
 		return err
 	}
 
-	// 3️⃣ Insert ke pivot table
 	queryPivot := `INSERT INTO book_categories (book_id, category_id) VALUES (?, ?)`
 	_, err = tx.ExecContext(ctx, queryPivot, bookID, category.ID)
 	if err != nil {
@@ -135,7 +131,6 @@ func (r *bookRepository) Create(ctx context.Context, book *domain.Book) error {
 		return err
 	}
 
-	// 4️⃣ Commit transaction
 	return tx.Commit()
 }
 

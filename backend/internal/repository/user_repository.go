@@ -5,7 +5,6 @@ import (
 	"submission_hmc/internal/domain"
 )
 
-// Interface UserRepository
 type UserRepository interface {
 	Create(user domain.User) (int64, error)
     GetByEmail(email string) (*domain.User, error)
@@ -15,7 +14,6 @@ type UserRepository interface {
     Delete(id int) error
 }
 
-// Implementasi UserRepository
 type userRepository struct {
 	db *sql.DB
 }

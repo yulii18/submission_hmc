@@ -44,21 +44,18 @@ func JWTMiddleware(jwtKey []byte) func(http.Handler) http.Handler {
 				return
 			}
 
-			// ===== USER ID =====
 			userIDFloat, ok := claims["userID"].(float64)
 			if !ok {
 				http.Error(w, "invalid token userID", http.StatusUnauthorized)
 				return
 			}
 
-			// ===== EMAIL =====
 			email, ok := claims["email"].(string)
 			if !ok {
 				http.Error(w, "invalid token email", http.StatusUnauthorized)
 				return
 			}
 
-			// ===== ROLE =====
 			role, ok := claims["role"].(string)
 			if !ok {
 				http.Error(w, "invalid token role", http.StatusUnauthorized)

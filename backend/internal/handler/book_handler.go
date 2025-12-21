@@ -89,7 +89,6 @@ func (h *BookHandler) BorrowBook(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Ambil userID dari context JWT
     userIDCtx := r.Context().Value("userID")
     if userIDCtx == nil {
         http.Error(w, "User belum login", http.StatusUnauthorized)
@@ -97,7 +96,6 @@ func (h *BookHandler) BorrowBook(w http.ResponseWriter, r *http.Request) {
     }
     userID := userIDCtx.(int64)
 
-    // Panggil service untuk meminjam buku
     book, err := h.bookService.BorrowBook(r.Context(), id)
     if err != nil {
         http.Error(w, err.Error(), http.StatusBadRequest)

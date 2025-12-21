@@ -11,17 +11,14 @@ import (
 	"submission_hmc/internal/middleware"
 )
 
-// UserHandler handles CRUD operations for users
 type UserHandler struct {
 	userService *service.UserService
 }
 
-// Constructor
 func NewUserHandler(userService *service.UserService) *UserHandler {
 	return &UserHandler{userService}
 }
 
-// GET /users → ambil semua user (admin only)
 func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := h.userService.GetAllUsers()
 	if err != nil {
@@ -33,7 +30,6 @@ func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(users)
 }
 
-// GET /users/{id} → ambil user berdasarkan ID
 func (h *UserHandler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
@@ -69,7 +65,6 @@ func(h *UserHandler) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
-// PUT /users/{id} → update user
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
@@ -96,7 +91,6 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// DELETE /users/{id} → hapus user (admin only)
 func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
