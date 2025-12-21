@@ -2,23 +2,39 @@ import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// ===================================
-// PINJAM buku
-// ===================================
-export const pinjamBuku = (data) => {
-  return axios.post(`${API_URL}/borrow`, data);
+
+export const pinjamBuku = async ({ buku_id }) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_URL}/books/${buku_id}/borrow`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Gagal meminjam buku");
+  }
+
+  return res.json();
 };
 
-// ===================================
-// GET peminjaman berdasarkan USER
-// ===================================
-export const getPeminjamanUser = (userId) => {
-  return axios.get(`${API_URL}/borrow/user/${userId}`);
-};
+export const getPeminjamanUser = async () => {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("User belum login");
 
-// ===================================
-// KEMBALIKAN buku
-// ===================================
-export const kembalikanBuku = (id) => {
-  return axios.put(`${API_URL}/borrow/${id}/return`);
+  const res = await fetch(`${API_URL}/borrow/user`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Gagal mengambil data peminjaman");
+  }
+
+  return res.json();
 };

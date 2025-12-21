@@ -15,9 +15,12 @@ export default function AdminBuku() {
     penerbit: "",
     tahun: "",
     stok: "",
+    kategori: "",
     sinopsis: "",
   });
   const [editMode, setEditMode] = useState(false);
+
+  const kategoriOptions = ["Fiksi", "Non Fiksi", "Akademik & Referensi"];
 
   useEffect(() => {
     loadBuku();
@@ -40,16 +43,17 @@ export default function AdminBuku() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // konversi tahun dan stok ke number sebelum submit
       const payload = {
         ...form,
         tahun: Number(form.tahun),
         stok: Number(form.stok),
       };
-      console.log(payload);
 
-      if (editMode) await updateBuku(form.id, payload);
-      else await tambahBuku(payload);
+      if (editMode) {
+        await updateBuku(form.id, payload);
+      } else {
+        await tambahBuku(payload);
+      }
 
       alert(editMode ? "Buku diperbarui" : "Buku ditambahkan");
       resetForm();
@@ -85,6 +89,7 @@ export default function AdminBuku() {
       penerbit: "",
       tahun: "",
       stok: "",
+      kategori: "",
       sinopsis: "",
     });
     setEditMode(false);
@@ -97,7 +102,6 @@ export default function AdminBuku() {
     <div className="max-w-6xl mx-auto px-4 py-10 space-y-8">
       <h1 className="text-3xl font-bold text-yellow-600">Admin Buku</h1>
 
-      {/* FORM */}
       <form
         onSubmit={handleSubmit}
         className="bg-white p-6 rounded-2xl shadow grid md:grid-cols-3 gap-4"
@@ -110,6 +114,7 @@ export default function AdminBuku() {
           className={inputClass}
           required
         />
+
         <input
           name="penulis"
           value={form.penulis}
@@ -118,6 +123,22 @@ export default function AdminBuku() {
           className={inputClass}
           required
         />
+
+        <select
+          name="kategori"
+          value={form.kategori}
+          onChange={handleChange}
+          className={inputClass}
+          required
+        >
+          <option value="">Pilih Kategori</option>
+          {kategoriOptions.map((kat) => (
+            <option key={kat} value={kat}>
+              {kat}
+            </option>
+          ))}
+        </select>
+
         <input
           name="penerbit"
           value={form.penerbit}
@@ -125,6 +146,7 @@ export default function AdminBuku() {
           placeholder="Penerbit"
           className={inputClass}
         />
+
         <input
           type="number"
           name="tahun"
@@ -133,6 +155,7 @@ export default function AdminBuku() {
           placeholder="Tahun"
           className={inputClass}
         />
+
         <input
           type="number"
           name="stok"
@@ -141,6 +164,7 @@ export default function AdminBuku() {
           placeholder="Stok"
           className={inputClass}
         />
+
         <textarea
           name="sinopsis"
           value={form.sinopsis}
@@ -158,13 +182,13 @@ export default function AdminBuku() {
         </button>
       </form>
 
-      {/* TABEL */}
       <div className="bg-white rounded-2xl shadow overflow-x-auto">
         <table className="w-full">
           <thead className="bg-yellow-500 text-white">
             <tr>
               <th className="p-3">Judul</th>
               <th className="p-3">Penulis</th>
+              <th className="p-3">Kategori</th>
               <th className="p-3">Stok</th>
               <th className="p-3">Aksi</th>
             </tr>
@@ -174,6 +198,7 @@ export default function AdminBuku() {
               <tr key={b.id} className="border-t">
                 <td className="p-3">{b.judul}</td>
                 <td className="p-3">{b.penulis}</td>
+                <td className="p-3">{b.kategori}</td>
                 <td className="p-3">{b.stok}</td>
                 <td className="p-3 flex gap-3">
                   <button
@@ -191,9 +216,10 @@ export default function AdminBuku() {
                 </td>
               </tr>
             ))}
+
             {buku.length === 0 && (
               <tr>
-                <td colSpan="4" className="p-3 text-center text-gray-500">
+                <td colSpan="5" className="p-3 text-center text-gray-500">
                   Tidak ada data buku
                 </td>
               </tr>

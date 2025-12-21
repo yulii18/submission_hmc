@@ -1,12 +1,13 @@
-import { BrowserRouter, Routes, Route } from "react-router";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navigasi from "./components/Navigasi";
 import Footer from "./components/Footer";
 import Beranda from "./pages/Beranda";
 import Koleksi from "./pages/Koleksi";
 import Profil from "./pages/Profil";
 import DetailBuku from "./pages/DetailBuku";
-import Akun from "./pages/Akun";
-import AdminBuku from "./pages/AdminBuku"; 
+import AdminBuku from "./pages/AdminBuku";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 export default function App() {
   return (
@@ -19,10 +20,11 @@ export default function App() {
             <Route path="/" element={<Beranda />} />
             <Route path="/koleksi" element={<Koleksi />} />
             <Route path="/profil" element={<Profil />} />
+            <Route path="/login" element={<Login />} />
 
             <Route path="/buku/:id" element={<DetailBuku />} />
-            <Route path="/akun" element={<Akun />} />
             <Route path="/admin/buku" element={<AdminBuku />} />
+            <Route path="/register" element={<Register />} />
           </Routes>
         </div>
 

@@ -1,7 +1,6 @@
 export default function KoleksiCard({ judul, penulis, gambar }) {
   return (
     <div className="bg-white rounded-xl shadow p-4">
-      {/* CONTAINER GAMBAR */}
       <div className="w-full h-48 flex justify-center mb-4">
         <img
           src={gambar}

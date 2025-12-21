@@ -1,112 +1,95 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { authService } from "../services/authService";
+import { getPeminjamanSaya } from "../services/bukuService";
 
 export default function Profil() {
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null);
+  const [peminjaman, setPeminjaman] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const API_URL = import.meta.env.VITE_API_URL;
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!email || !password) {
-      alert("Email dan kata sandi wajib diisi");
-      return;
+  useEffect(() => {
+    if (!authService.isAuthenticated()) {
+      navigate("/login");
     }
+  }, [navigate]);
 
-    try {
-      setLoading(true);
-
-      const res = await fetch(`${API_URL}/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
-
-      if (!res.ok) throw new Error("Login gagal");
-
-      const data = await res.json();
-
-      /**
-       * data contoh:
-       * {
-       *   id: 1,
-       *   nama: "Budi",
-       *   role: "user"
-       * }
-       */
-
-      //  simpan ke localStorage
-      localStorage.setItem("user", JSON.stringify(data));
-
-      // 🔀 CEK ROLE
-      if (data.role === "admin") {
-        navigate("/admin/buku");
-      } else {
-        navigate("/akun");
+  useEffect(() => {
+    const fetchUser = async () => {
+      const currentUser = await authService.getCurrentUser();
+      if (!currentUser) {
+        navigate("/login");
+        return;
       }
-    } catch (error) {
-      alert("Email atau kata sandi salah");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      setUser(currentUser);
+    };
+
+    fetchUser();
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchPeminjaman = async () => {
+      try {
+        const res = await getPeminjamanSaya();
+        console.log("Peminjaman:", res.data);
+        setPeminjaman(res.data || []);
+      } catch (err) {
+        console.error("Error fetching peminjaman:", err);
+        setPeminjaman([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPeminjaman();
+  }, [user]);
+
+  const getInitial = (name) => (name ? name.charAt(0).toUpperCase() : "U");
+
+  if (!user) {
+    return (
+      <div className="flex justify-center py-20">
+        <div className="animate-spin h-10 w-10 border-b-2 border-yellow-600 rounded-full" />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-start">
-      <div className="w-full max-w-5xl mx-auto px-4 py-16">
-        <div className="bg-white rounded-xl shadow-md p-10">
-          <h1 className="text-2xl font-bold text-gray-800 mb-3">
-            Masuk Anggota Perpustakaan
-          </h1>
-
-          <p className="text-gray-600 mb-8 max-w-2xl">
-            Masukkan email dan kata sandi yang terdaftar di sistem perpustakaan.
-          </p>
-
-          <form onSubmit={handleSubmit} className="space-y-6 max-w-md">
-            <div>
-              <label className="block text-sm font-medium mb-2">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="contoh@email.com"
-                className="w-full rounded-lg border px-4 py-2 focus:ring-2 focus:ring-yellow-500"
-              />
+    <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="grid md:grid-cols-3 gap-6">
+        <div>
+          <div className="bg-linear-to-br from-yellow-400 to-orange-500 rounded-xl p-8 text-white text-center">
+            <div className="w-28 h-28 bg-white rounded-full mx-auto flex items-center justify-center text-yellow-600 text-4xl font-bold mb-4">
+              {getInitial(user.name)}
             </div>
+            <h2 className="text-xl font-bold">{user.name}</h2>
+            <p className="text-sm opacity-90">{user.email}</p>
+            <p className="mt-2 text-sm">Role: {user.role}</p>
+          </div>
+        </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Kata Sandi
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Masukkan kata sandi"
-                className="w-full rounded-lg border px-4 py-2 focus:ring-2 focus:ring-yellow-500"
-              />
-            </div>
+        <div className="md:col-span-2">
+          <h2 className="text-2xl font-bold mb-4">Buku Sedang Dipinjam</h2>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 transition disabled:opacity-50"
-            >
-              {loading ? "Memproses..." : "Masuk"}
-            </button>
-          </form>
+          {loading ? (
+            <p>Loading...</p>
+          ) : peminjaman.length === 0 ? (
+            <p className="text-gray-500">Belum ada buku dipinjam</p>
+          ) : (
+            peminjaman.map((item) => (
+              <div key={item.borrowing_id} className="bg-white p-4 rounded shadow mb-3">
+                <h3 className="font-semibold">{item.judul}</h3>
+                <p className="text-sm text-gray-600">
+                  Dipinjam:{" "}
+                  {new Date(item.tanggal_pinjam).toLocaleDateString("id-ID")}
+                </p>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

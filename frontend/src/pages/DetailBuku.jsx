@@ -1,15 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { pinjamBuku } from "../services/peminjamanService";
+import { getDetailBuku, pinjamBuku } from "../services/bukuService";
+import { authService } from "../services/authService";
 
 function getGambarById(id) {
-  const daftarGambar = [
-    "/images/b2.jpeg",
-    "/images/b3.jpeg",
-    "/images/b1.jpeg",
-  ];
-  return daftarGambar[id % daftarGambar.length];
-}
+  const daftarGambar = ["/images/b2.jpeg","/images/b3.jpeg","/images/b1.jpeg",];
+  return daftarGambar[Number(id) % daftarGambar.length];}
 
 export default function DetailBuku() {
   const { id } = useParams();
@@ -17,89 +13,158 @@ export default function DetailBuku() {
 
   const [buku, setBuku] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingPinjam, setLoadingPinjam] = useState(false);
 
-  const API_URL = import.meta.env.VITE_API_URL;
-
-  // SIMULASI USER LOGIN (NANTI DARI AUTH)
-  const userId = 1;
+  const isLoggedIn = authService.isAuthenticated();
 
   useEffect(() => {
     const fetchDetail = async () => {
-      const res = await fetch(`${API_URL}/books/${id}`);
-      const data = await res.json();
-      setBuku(data);
-      setLoading(false);
+      try {
+        const response = await getDetailBuku(id);
+        setBuku(response.data);
+      } catch (err) {
+        console.error("Error fetching book detail:", err);
+        setBuku(null);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchDetail();
-  }, [id, API_URL]);
+  }, [id]);
 
   const handlePinjam = async () => {
-    try {
-      await pinjamBuku({
-        user_id: userId,
-        buku_id: buku.id,
-      });
+    if (!isLoggedIn) {
+      alert("Silakan login terlebih dahulu untuk meminjam buku");
+      navigate("/login");
+      return;
+    }
+    if (buku.stok <= 0) {
+      alert("Maaf, stok buku sedang habis");
+      return;
+    }
 
-      alert("Buku berhasil dipinjam");
-      navigate("/akun");
+    setLoadingPinjam(true);
+    try {
+      const response = await pinjamBuku(id);
+      alert(`Buku "${buku.judul}" berhasil dipinjam!`);
     } catch (err) {
-      alert("Gagal meminjam buku");
+      console.error("Error meminjam buku:", err);
+      alert(err.message || "Gagal meminjam buku. Silakan coba lagi.");
+    } finally {
+      setLoadingPinjam(false);
     }
   };
 
-  if (loading) return <p className="text-center mt-10">Memuat...</p>;
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Memuat detail buku...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!buku) {
+    return (
+      <div className="text-center mt-20">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          Buku tidak ditemukan
+        </h2>
+        <button
+          onClick={() => navigate("/koleksi")}
+          className="text-yellow-600 hover:underline"
+        >
+          ← Kembali ke Koleksi
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <button
         onClick={() => navigate("/koleksi")}
-        className="mb-6 text-yellow-600 hover:underline"
+        className="mb-6 text-yellow-600 hover:underline flex items-center gap-2"
       >
-        ← Kembali
+        <span>←</span> Kembali ke Koleksi
       </button>
 
       <div className="grid md:grid-cols-2 gap-10">
-        {/* GAMBAR */}
-        <img
-          src={getGambarById(buku.id)}
-          alt={buku.judul}
-          className="h-80 mx-auto rounded-xl shadow"
-        />
+        <div className="flex justify-center">
+          <img
+            src={getGambarById(buku.id)}
+            alt={buku.judul}
+            className="h-80 w-auto rounded-xl shadow-lg object-cover"
+          />
+        </div>
 
-        {/* DETAIL */}
         <div className="space-y-4">
-          {/* JUDUL BUKU */}
           <h1 className="text-3xl font-bold text-gray-800">{buku.judul}</h1>
+          <div className="space-y-3 text-gray-700">
+            <div>
+              <strong className="text-gray-900">Penulis:</strong>
+              <p>{buku.penulis}</p>
+            </div>
 
-          <ul className="space-y-2 text-gray-700 mb-6">
-            <li>
-              <strong>Penulis:</strong> {buku.penulis}
-            </li>
-            <li>
-              <strong>Sinopsis:</strong> {buku.sinopsis}
-            </li>
-            <li>
-              <strong>Kategori:</strong> {buku.kategori}
-            </li>
-            <li>
-              <strong>Penerbit:</strong> {buku.penerbit}
-            </li>
-            <li>
-              <strong>Tahun:</strong> {buku.tahun}
-            </li>
-            <li>
-              <strong>Stok:</strong> {buku.stok}
-            </li>
-          </ul>
+            <div>
+              <strong className="text-gray-900">Sinopsis:</strong>
+              <p className="text-sm leading-relaxed">{buku.sinopsis}</p>
+            </div>
 
-          <button
-            onClick={handlePinjam}
-            disabled={buku.stok <= 0}
-            className="bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 disabled:bg-gray-400"
-          >
-            Pinjam Buku
-          </button>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <strong className="text-gray-900">Kategori:</strong>
+                <p>{buku.kategori}</p>
+              </div>
+              <div>
+                <strong className="text-gray-900">Penerbit:</strong>
+                <p>{buku.penerbit}</p>
+              </div>
+              <div>
+                <strong className="text-gray-900">Tahun:</strong>
+                <p>{buku.tahun}</p>
+              </div>
+              <div>
+                <strong className="text-gray-900">Stok:</strong>
+                <p
+                  className={buku.stok > 0 ? "text-green-600" : "text-red-600"}
+                >
+                  {buku.stok > 0 ? `${buku.stok} tersedia` : "Habis"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4">
+            {isLoggedIn ? (
+              <button
+                onClick={handlePinjam}
+                disabled={buku.stok <= 0 || loadingPinjam}
+                className="bg-yellow-600 text-white px-6 py-3 rounded-lg hover:bg-yellow-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition w-full md:w-auto"
+              >
+                {loadingPinjam
+                  ? "Memproses..."
+                  : buku.stok > 0
+                  ? "Pinjam Buku"
+                  : "Stok Habis"}
+              </button>
+            ) : (
+              <div className="space-y-2">
+                <button
+                  onClick={() => navigate("/login")}
+                  className="bg-yellow-600 text-white px-6 py-3 rounded-lg hover:bg-yellow-700 transition w-full md:w-auto"
+                >
+                  Login untuk Meminjam
+                </button>
+                <p className="text-sm text-gray-500">
+                  Anda harus login terlebih dahulu untuk meminjam buku
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

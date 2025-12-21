@@ -11,20 +11,14 @@ export default function Beranda() {
   const [loading, setLoading] = useState(true);
 
   const API_URL = import.meta.env.VITE_API_URL;
-
-  // 🔹 gambar FE (public/images)
-  const daftarGambar = [
-    "/images/b1.jpeg",
-    "/images/b2.jpeg",
-    "/images/b3.jpeg",
-  ];
+  const daftarGambar = ["/images/b1.jpeg","/images/b2.jpeg","/images/b3.jpeg",];
 
   useEffect(() => {
     const fetchBuku = async () => {
       try {
         const res = await axios.get(`${API_URL}/books`);
         if (Array.isArray(res.data)) {
-          setKoleksi(res.data.slice(0, 3)); // ambil 3 buku
+          setKoleksi(res.data.slice(0, 3)); 
         }
       } catch (err) {
         console.error("Gagal ambil data beranda:", err);
@@ -35,10 +29,8 @@ export default function Beranda() {
 
     fetchBuku();
   }, [API_URL]);
-
   return (
     <div className="bg-gray-50">
-      {/* HERO */}
       <section className="w-full overflow-hidden">
         <img
           src="/images/perpus.jpg"
@@ -48,7 +40,6 @@ export default function Beranda() {
       </section>
 
       <div className="max-w-7xl mx-auto px-4 py-12 space-y-20">
-        {/* BERITA */}
         <section>
           <h2 className="text-3xl font-bold text-center mb-10">
             Berita Terbaru
@@ -63,7 +54,6 @@ export default function Beranda() {
           </div>
         </section>
 
-        {/* KOLEKSI */}
         <section className="text-center">
           <h2 className="text-3xl font-bold mb-10">Koleksi</h2>
 
