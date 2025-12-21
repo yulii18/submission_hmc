@@ -23,21 +23,3 @@ export const beritaList = [
     gambar: "/images/berita3.jpg",
   },
 ];
-
-export const koleksiList = [
-  {
-    judul: "Buku Ilmiah",
-    deskripsi: "Skripsi, tesis, dan laporan penelitian.",
-    gambar: "/images/b1.jpeg",
-  },
-  {
-    judul: "Buku Anak",
-    deskripsi: "Buku cerita dan pembelajaran untuk anak anak.",
-    gambar: "/images/b2.png",
-  },
-  {
-    judul: "Buku Pelajaran",
-    deskripsi: "Koleksi buku fisik untuk pembelajaran.",
-    gambar: "/images/b3.jpeg",
-  },
-];
