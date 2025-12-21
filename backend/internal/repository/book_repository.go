@@ -12,6 +12,7 @@ type BookRepository interface {
 	FindAll(ctx context.Context) ([]domain.Book, error)
 	Create(ctx context.Context, book *domain.Book) error
 	FindByID(ctx context.Context, id int64) (*domain.Book, error)
+	FindByCategoryID(ctx context.Context, categoryID int) ([]domain.Book, error)
 	Update(ctx context.Context, book *domain.Book) error
 	Delete(ctx context.Context, id int64) error
 }
@@ -26,7 +27,21 @@ func NewBookRepository(db *sql.DB) BookRepository {
 
 func (r *bookRepository) FindAll(ctx context.Context) ([]domain.Book, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, judul, sinopsis, penulis, penerbit, tahun, stok, created_at FROM books
+		SELECT 
+			b.id,
+			b.judul,
+			b.sinopsis,
+			b.penulis,
+			b.penerbit,
+			b.tahun,
+			b.stok,
+			IFNULL(GROUP_CONCAT(c.nama_kategori), '') AS kategori,
+			b.created_at
+		FROM books b
+		LEFT JOIN book_categories bc ON b.id = bc.book_id
+		LEFT JOIN categories c ON bc.category_id = c.id
+		GROUP BY b.id
+		ORDER BY b.created_at DESC
 	`)
 	if err != nil {
 		return nil, err
@@ -34,8 +49,10 @@ func (r *bookRepository) FindAll(ctx context.Context) ([]domain.Book, error) {
 	defer rows.Close()
 
 	books := make([]domain.Book, 0)
+
 	for rows.Next() {
 		var b domain.Book
+
 		if err := rows.Scan(
 			&b.ID,
 			&b.Judul,
@@ -44,25 +61,34 @@ func (r *bookRepository) FindAll(ctx context.Context) ([]domain.Book, error) {
 			&b.Penerbit,
 			&b.Tahun,
 			&b.Stok,
+			&b.Kategori,
 			&b.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
+
 		books = append(books, b)
 	}
 
 	return books, nil
 }
 
+
 func (r *bookRepository) Create(ctx context.Context, book *domain.Book) error {
-	fmt.Println("Rasya Ganteng")
-	query := `
+	// Mulai transaction
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	// 1️⃣ Insert book
+	queryInsertBook := `
 		INSERT INTO books (judul, sinopsis, penulis, penerbit, tahun, stok)
 		VALUES (?, ?, ?, ?, ?, ?)
 	`
-	result, err := r.db.ExecContext(
+	result, err := tx.ExecContext(
 		ctx,
-		query,
+		queryInsertBook,
 		book.Judul,
 		book.Sinopsis,
 		book.Penulis,
@@ -70,21 +96,68 @@ func (r *bookRepository) Create(ctx context.Context, book *domain.Book) error {
 		book.Tahun,
 		book.Stok,
 	)
-	fmt.Println(result)
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
-	id, _ := result.LastInsertId()
-	book.ID = id
-	return nil
+	bookID, err := result.LastInsertId()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	book.ID = bookID
+
+	// 2️⃣ Ambil kategori
+	queryGetCategory := `SELECT id, nama_kategori FROM categories WHERE nama_kategori = ? LIMIT 1`
+
+	var category struct {
+		ID   int64
+		Nama string
+	}
+
+	err = tx.QueryRowContext(ctx, queryGetCategory, book.Kategori).Scan(&category.ID, &category.Nama)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			tx.Rollback()
+			fmt.Println("Kategori tidak ditemukan")
+			return fmt.Errorf("kategori '%s' tidak ditemukan", book.Kategori)
+		}
+		tx.Rollback()
+		return err
+	}
+
+	// 3️⃣ Insert ke pivot table
+	queryPivot := `INSERT INTO book_categories (book_id, category_id) VALUES (?, ?)`
+	_, err = tx.ExecContext(ctx, queryPivot, bookID, category.ID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 4️⃣ Commit transaction
+	return tx.Commit()
 }
+
 
 func (r *bookRepository) FindByID(ctx context.Context, id int64) (*domain.Book, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, judul, sinopsis, penulis, penerbit, tahun, stok, created_at
-		FROM books WHERE id = ?
-	`, id)
+        SELECT 
+            b.id,
+            b.judul,
+            b.sinopsis,
+            b.penulis,
+            b.penerbit,
+            b.tahun,
+            b.stok,
+            IFNULL(GROUP_CONCAT(c.nama_kategori), ''),
+            b.created_at
+        FROM books b
+        LEFT JOIN book_categories bc ON b.id = bc.book_id
+        LEFT JOIN categories c ON bc.category_id = c.id
+        WHERE b.id = ?
+        GROUP BY b.id
+    `, id)
 
 	var b domain.Book
 	err := row.Scan(
@@ -95,6 +168,7 @@ func (r *bookRepository) FindByID(ctx context.Context, id int64) (*domain.Book, 
 		&b.Penerbit,
 		&b.Tahun,
 		&b.Stok,
+		&b.Kategori,
 		&b.CreatedAt,
 	)
 	if err != nil {
@@ -126,4 +200,51 @@ func (r *bookRepository) Delete(ctx context.Context, id int64) error {
 		DELETE FROM books WHERE id=?
 	`, id)
 	return err
+}
+
+func (r *bookRepository) FindByCategoryID(
+	ctx context.Context,
+	categoryID int,
+) ([]domain.Book, error) {
+
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT
+			b.id,
+			b.judul,
+			b.penulis,
+			b.penerbit,
+			b.tahun,
+			b.stok,
+			GROUP_CONCAT(c.nama_kategori) AS kategori
+		FROM books b
+		JOIN book_categories bc ON b.id = bc.book_id
+		JOIN categories c ON bc.category_id = c.id
+		WHERE c.id = ?
+		GROUP BY b.id
+	`, categoryID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var books []domain.Book
+
+	for rows.Next() {
+		var b domain.Book
+		err := rows.Scan(
+			&b.ID,
+			&b.Judul,
+			&b.Penulis,
+			&b.Penerbit,
+			&b.Tahun,
+			&b.Stok,
+			&b.Kategori,
+		)
+		if err != nil {
+			return nil, err
+		}
+		books = append(books, b)
+	}
+
+	return books, nil
 }

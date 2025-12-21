@@ -44,11 +44,33 @@ func JWTMiddleware(jwtKey []byte) func(http.Handler) http.Handler {
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), UserIDKey, claims["id"])
-			ctx = context.WithValue(ctx, EmailKey, claims["email"])
-			ctx = context.WithValue(ctx, RoleKey, claims["role"]) 
+			// ===== USER ID =====
+			userIDFloat, ok := claims["userID"].(float64)
+			if !ok {
+				http.Error(w, "invalid token userID", http.StatusUnauthorized)
+				return
+			}
+
+			// ===== EMAIL =====
+			email, ok := claims["email"].(string)
+			if !ok {
+				http.Error(w, "invalid token email", http.StatusUnauthorized)
+				return
+			}
+
+			// ===== ROLE =====
+			role, ok := claims["role"].(string)
+			if !ok {
+				http.Error(w, "invalid token role", http.StatusUnauthorized)
+				return
+			}
+
+			ctx := r.Context()
+			ctx = context.WithValue(ctx, UserIDKey, int64(userIDFloat))
+			ctx = context.WithValue(ctx, EmailKey, email)
+			ctx = context.WithValue(ctx, RoleKey, role)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
-} 
+}

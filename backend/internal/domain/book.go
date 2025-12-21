@@ -10,5 +10,6 @@ type Book struct {
 	Penerbit  string    `json:"penerbit"`
 	Tahun     int       `json:"tahun"`
 	Stok      int       `json:"stok"`
+	Kategori  string    `json:"kategori"`
 	CreatedAt time.Time `json:"created_at"`
 }
